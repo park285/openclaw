@@ -25,6 +25,7 @@ Docs: https://docs.clawd.bot
 ### Fixes
 - BlueBubbles: keep part-index GUIDs in reply tags when short IDs are missing.
 - Web UI: hide internal `message_id` hints in chat bubbles.
+- Web UI: allow form saves with unsupported schema paths while blocking missing schema; clear stale disconnect banners on reconnect. (#1678) Thanks @Glucksberg.
 - Web UI: show Stop button during active runs, swap back to New session when idle. (#1664) Thanks @ndbroadbent.
 - Heartbeat: normalize target identifiers for consistent routing.
 - TUI: reload history after gateway reconnect to restore session state. (#1663)
