@@ -52,7 +52,7 @@ export function createMemorySearchTool(options: {
         agentId,
       });
       if (!manager) {
-        return jsonResult({ results: [], disabled: true, error });
+        return jsonResult({ results: [], disabled: true, error }, { useToon: true });
       }
       try {
         const citationsMode = resolveMemoryCitationsMode(cfg);
@@ -72,16 +72,19 @@ export function createMemorySearchTool(options: {
           status.backend === "qmd"
             ? clampResultsByInjectedChars(decorated, resolved.qmd?.limits.maxInjectedChars)
             : decorated;
-        return jsonResult({
-          results,
-          provider: status.provider,
-          model: status.model,
-          fallback: status.fallback,
-          citations: citationsMode,
-        });
+        return jsonResult(
+          {
+            results,
+            provider: status.provider,
+            model: status.model,
+            fallback: status.fallback,
+            citations: citationsMode,
+          },
+          { useToon: true },
+        );
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        return jsonResult({ results: [], disabled: true, error: message });
+        return jsonResult({ results: [], disabled: true, error: message }, { useToon: true });
       }
     },
   };
@@ -117,7 +120,7 @@ export function createMemoryGetTool(options: {
         agentId,
       });
       if (!manager) {
-        return jsonResult({ path: relPath, text: "", disabled: true, error });
+        return jsonResult({ path: relPath, text: "", disabled: true, error }, { useToon: true });
       }
       try {
         const result = await manager.readFile({
@@ -125,10 +128,13 @@ export function createMemoryGetTool(options: {
           from: from ?? undefined,
           lines: lines ?? undefined,
         });
-        return jsonResult(result);
+        return jsonResult(result, { useToon: true });
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        return jsonResult({ path: relPath, text: "", disabled: true, error: message });
+        return jsonResult(
+          { path: relPath, text: "", disabled: true, error: message },
+          { useToon: true },
+        );
       }
     },
   };
