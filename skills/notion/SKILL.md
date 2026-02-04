@@ -24,7 +24,7 @@ Use the Notion API to create/read/update pages, data sources (databases), and bl
 
 ```bash
 NOTION_KEY=$(cat ~/.config/notion/api_key)
-HEADERS="-H 'Authorization: Bearer $NOTION_KEY' -H 'Notion-Version: 2025-09-03' -H 'Content-Type: application/json'"
+HEADERS=(-H "Authorization: Bearer $NOTION_KEY" -H "Notion-Version: 2025-09-03" -H "Content-Type: application/json")
 ```
 
 > **Note:** The `Notion-Version` header is **required**. This skill uses `2025-09-03` (latest). In this version, databases are called "data sources" in the API.
@@ -47,14 +47,14 @@ HEADERS="-H 'Authorization: Bearer $NOTION_KEY' -H 'Notion-Version: 2025-09-03' 
 **Search for pages and data sources:**
 
 ```bash
-curl -X POST "https://api.notion.com/v1/search" $HEADERS \
+curl -X POST "https://api.notion.com/v1/search" "${HEADERS[@]}" \
   -d '{"query": "page title"}'
 ```
 
 **Create page in a data source:**
 
 ```bash
-curl -X POST "https://api.notion.com/v1/pages" $HEADERS \
+curl -X POST "https://api.notion.com/v1/pages" "${HEADERS[@]}" \
   -d '{
     "parent": {"database_id": "xxx"},
     "properties": {

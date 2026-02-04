@@ -78,7 +78,7 @@ bash pty:true workdir:~/project command:"codex exec 'Add error handling to API c
 
 ```bash
 # Start agent
-bash pty:true workdir:~/project background:true command:"codex --full-auto 'Build snake game'"
+bash pty:true workdir:~/project background:true command:"codex exec --full-auto 'Build snake game'"
 
 # Monitor progress
 process action:log sessionId:XXX
@@ -126,7 +126,7 @@ When spawning agents in background, keep user in the loop:
 For long-running tasks, append a wake trigger so OpenClaw gets notified immediately:
 
 ```bash
-bash pty:true workdir:~/project background:true command:"codex --yolo exec 'Build a REST API for todos.
+bash pty:true workdir:~/project background:true command:"codex exec --yolo 'Build a REST API for todos.
 
 When completely finished, run: openclaw gateway wake --text \"Done: Built todos REST API with CRUD endpoints\" --mode now'"
 ```
