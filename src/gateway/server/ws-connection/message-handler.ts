@@ -939,7 +939,7 @@ export function attachGatewayWsMessageHandler(params: {
           connId,
           methods: gatewayMethods.length,
           events: events.length,
-          presence: (snapshot.presence ?? []).length,
+          presence: snapshot.presence.length,
           stateVersion: snapshot.stateVersion.presence,
         });
 

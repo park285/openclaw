@@ -206,13 +206,10 @@ export function createSessionsListTool(opts?: {
         rows.push(row);
       }
 
-      return jsonResult(
-        {
-          count: rows.length,
-          sessions: rows,
-        },
-        { useToon: true },
-      );
+      return jsonResult({
+        count: rows.length,
+        sessions: rows,
+      });
     },
   };
 }
