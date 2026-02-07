@@ -194,6 +194,8 @@ const FIELD_LABELS: Record<string, string> = {
   "tools.web.search.maxResults": "Web Search Max Results",
   "tools.web.search.timeoutSeconds": "Web Search Timeout (sec)",
   "tools.web.search.cacheTtlMinutes": "Web Search Cache TTL (min)",
+  "tools.web.search.exa.endpoint": "Exa MCP Endpoint",
+  "tools.web.search.exa.apiKey": "Exa MCP API Key",
   "tools.web.fetch.enabled": "Enable Web Fetch Tool",
   "tools.web.fetch.maxChars": "Web Fetch Max Chars",
   "tools.web.fetch.timeoutSeconds": "Web Fetch Timeout (sec)",
@@ -471,7 +473,7 @@ const FIELD_HELP: Record<string, string> = {
     'Text suffix for cross-context markers (supports "{channel}").',
   "tools.message.broadcast.enabled": "Enable broadcast action (default: true).",
   "tools.web.search.enabled": "Enable the web_search tool (requires a provider API key).",
-  "tools.web.search.provider": 'Search provider ("brave" or "perplexity").',
+  "tools.web.search.provider": 'Search provider ("brave", "perplexity", or "exa").',
   "tools.web.search.apiKey": "Brave Search API key (fallback: BRAVE_API_KEY env var).",
   "tools.web.search.maxResults": "Default number of results to return (1-10).",
   "tools.web.search.timeoutSeconds": "Timeout in seconds for web_search requests.",
@@ -482,6 +484,8 @@ const FIELD_HELP: Record<string, string> = {
     "Perplexity base URL override (default: https://openrouter.ai/api/v1 or https://api.perplexity.ai).",
   "tools.web.search.perplexity.model":
     'Perplexity model override (default: "perplexity/sonar-pro").',
+  "tools.web.search.exa.endpoint": "Exa hosted MCP endpoint (default: https://mcp.exa.ai/mcp).",
+  "tools.web.search.exa.apiKey": "Optional API key for self-hosted Exa MCP (hosted MCP is free).",
   "tools.web.fetch.enabled": "Enable the web_fetch tool (lightweight HTTP fetch).",
   "tools.web.fetch.maxChars": "Max characters returned by web_fetch (truncated).",
   "tools.web.fetch.maxCharsCap":
@@ -542,8 +546,7 @@ const FIELD_HELP: Record<string, string> = {
     "Extra paths to include in memory search (directories or .md files; relative paths resolved from workspace).",
   "agents.defaults.memorySearch.experimental.sessionMemory":
     "Enable experimental session transcript indexing for memory search (default: false).",
-  "agents.defaults.memorySearch.provider":
-    'Embedding provider ("openai", "gemini", "voyage", or "local").',
+  "agents.defaults.memorySearch.provider": 'Embedding provider ("openai", "gemini", or "local").',
   "agents.defaults.memorySearch.remote.baseUrl":
     "Custom base URL for remote embeddings (OpenAI-compatible proxies or Gemini overrides).",
   "agents.defaults.memorySearch.remote.apiKey": "Custom API key for the remote embedding provider.",

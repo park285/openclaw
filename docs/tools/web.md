@@ -11,7 +11,7 @@ title: "Web Tools"
 
 OpenClaw ships two lightweight web tools:
 
-- `web_search` — Search the web via Brave Search API (default) or Perplexity Sonar (direct or via OpenRouter).
+- `web_search` — Search the web via Brave Search API (default), Perplexity Sonar, or Exa (via hosted MCP).
 - `web_fetch` — HTTP fetch + readable extraction (HTML → markdown/text).
 
 These are **not** browser automation. For JS-heavy sites or logins, use the
@@ -33,6 +33,7 @@ These are **not** browser automation. For JS-heavy sites or logins, use the
 | ------------------- | -------------------------------------------- | ---------------------------------------- | -------------------------------------------- |
 | **Brave** (default) | Fast, structured results, free tier          | Traditional search results               | `BRAVE_API_KEY`                              |
 | **Perplexity**      | AI-synthesized answers, citations, real-time | Requires Perplexity or OpenRouter access | `OPENROUTER_API_KEY` or `PERPLEXITY_API_KEY` |
+| **Exa**             | Structured results, no API key required      | Hosted MCP rate limits may apply         | None (free hosted MCP)                       |
 
 See [Brave Search setup](/brave-search) and [Perplexity Sonar](/perplexity) for provider-specific details.
 
@@ -43,7 +44,7 @@ Set the provider in config:
   tools: {
     web: {
       search: {
-        provider: "brave", // or "perplexity"
+        provider: "brave", // or "perplexity" or "exa"
       },
     },
   },
@@ -139,6 +140,42 @@ If no base URL is set, OpenClaw chooses a default based on the API key source:
 | `perplexity/sonar-pro` (default) | Multi-step reasoning with web search | Complex questions |
 | `perplexity/sonar-reasoning-pro` | Chain-of-thought analysis            | Deep research     |
 
+## Using Exa (hosted MCP, no API key required)
+
+Exa provides web search via a free hosted MCP server. No API key is needed for the hosted endpoint.
+
+### Setting up Exa search
+
+```json5
+{
+  tools: {
+    web: {
+      search: {
+        provider: "exa",
+      },
+    },
+  },
+}
+```
+
+That's it! No API key needed. For self-hosted Exa MCP, add optional config:
+
+```json5
+{
+  tools: {
+    web: {
+      search: {
+        provider: "exa",
+        exa: {
+          endpoint: "https://your-exa-instance.com/mcp",
+          apiKey: "your-api-key",
+        },
+      },
+    },
+  },
+}
+```
+
 ## web_search
 
 Search the web using your configured provider.
@@ -149,6 +186,7 @@ Search the web using your configured provider.
 - API key for your chosen provider:
   - **Brave**: `BRAVE_API_KEY` or `tools.web.search.apiKey`
   - **Perplexity**: `OPENROUTER_API_KEY`, `PERPLEXITY_API_KEY`, or `tools.web.search.perplexity.apiKey`
+  - **Exa**: No API key required (free hosted MCP)
 
 ### Config
 
@@ -175,7 +213,7 @@ Search the web using your configured provider.
 - `country` (optional): 2-letter country code for region-specific results (e.g., "DE", "US", "ALL"). If omitted, Brave chooses its default region.
 - `search_lang` (optional): ISO language code for search results (e.g., "de", "en", "fr")
 - `ui_lang` (optional): ISO language code for UI elements
-- `freshness` (optional, Brave only): filter by discovery time (`pd`, `pw`, `pm`, `py`, or `YYYY-MM-DDtoYYYY-MM-DD`)
+- `freshness` (optional, Brave and Exa): filter by discovery time (`pd`, `pw`, `pm`, `py`, or `YYYY-MM-DDtoYYYY-MM-DD`)
 
 **Examples:**
 

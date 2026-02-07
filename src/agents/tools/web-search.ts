@@ -4,6 +4,7 @@ import type { AnyAgentTool } from "./common.js";
 import { formatCliCommand } from "../../cli/command-format.js";
 import { wrapWebContent } from "../../security/external-content.js";
 import { jsonResult, readNumberParam, readStringParam } from "./common.js";
+import { callExaSearch } from "./exa-mcp-client.js";
 import {
   CacheEntry,
   DEFAULT_CACHE_TTL_MINUTES,
@@ -17,7 +18,7 @@ import {
   writeCache,
 } from "./web-shared.js";
 
-const SEARCH_PROVIDERS = ["brave", "perplexity"] as const;
+const SEARCH_PROVIDERS = ["brave", "perplexity", "exa"] as const;
 const DEFAULT_SEARCH_COUNT = 5;
 const MAX_SEARCH_COUNT = 10;
 
@@ -128,12 +129,30 @@ function resolveSearchApiKey(search?: WebSearchConfig): string | undefined {
   return fromConfig || fromEnv || undefined;
 }
 
+function resolveExaApiKey(search?: WebSearchConfig): string | undefined {
+  const exaCfg =
+    search && "exa" in search && typeof search.exa === "object"
+      ? (search.exa as Record<string, unknown>)
+      : undefined;
+  const fromConfig = exaCfg && typeof exaCfg.apiKey === "string" ? exaCfg.apiKey.trim() : "";
+  const fromEnv = (process.env.EXA_API_KEY ?? "").trim();
+  return fromConfig || fromEnv || undefined;
+}
+
 function missingSearchKeyPayload(provider: (typeof SEARCH_PROVIDERS)[number]) {
   if (provider === "perplexity") {
     return {
       error: "missing_perplexity_api_key",
       message:
         "web_search (perplexity) needs an API key. Set PERPLEXITY_API_KEY or OPENROUTER_API_KEY in the Gateway environment, or configure tools.web.search.perplexity.apiKey.",
+      docs: "https://docs.openclaw.ai/tools/web",
+    };
+  }
+  if (provider === "exa") {
+    return {
+      error: "missing_exa_api_key",
+      message:
+        "web_search (exa) needs an API key. Set EXA_API_KEY in the Gateway environment, or configure tools.web.search.exa.apiKey.",
       docs: "https://docs.openclaw.ai/tools/web",
     };
   }
@@ -151,6 +170,9 @@ function resolveSearchProvider(search?: WebSearchConfig): (typeof SEARCH_PROVIDE
       : "";
   if (raw === "perplexity") {
     return "perplexity";
+  }
+  if (raw === "exa") {
+    return "exa";
   }
   if (raw === "brave") {
     return "brave";
@@ -397,6 +419,33 @@ async function runWebSearch(params: {
     return payload;
   }
 
+  if (params.provider === "exa") {
+    const results = await callExaSearch({
+      query: params.query,
+      numResults: params.count,
+      apiKey: params.apiKey,
+      timeoutMs: params.timeoutSeconds * 1000,
+    });
+
+    const mapped = results.map((r) => ({
+      title: r.title ? wrapWebContent(r.title, "web_search") : "",
+      url: r.url,
+      description: r.description ? wrapWebContent(r.description, "web_search") : "",
+      published: r.published || undefined,
+      siteName: r.siteName || undefined,
+    }));
+
+    const payload = {
+      query: params.query,
+      provider: params.provider,
+      count: mapped.length,
+      tookMs: Date.now() - start,
+      results: mapped,
+    };
+    writeCache(SEARCH_CACHE, cacheKey, payload, params.cacheTtlMs);
+    return payload;
+  }
+
   if (params.provider !== "brave") {
     throw new Error("Unsupported web search provider.");
   }
@@ -470,10 +519,14 @@ export function createWebSearchTool(options?: {
   const provider = resolveSearchProvider(search);
   const perplexityConfig = resolvePerplexityConfig(search);
 
-  const description =
-    provider === "perplexity"
-      ? "Search the web using Perplexity Sonar (direct or via OpenRouter). Returns AI-synthesized answers with citations from real-time web search."
-      : "Search the web using Brave Search API. Supports region-specific and localized search via country and language parameters. Returns titles, URLs, and snippets for fast research.";
+  const descriptions: Record<(typeof SEARCH_PROVIDERS)[number], string> = {
+    perplexity:
+      "Search the web using Perplexity Sonar (direct or via OpenRouter). Returns AI-synthesized answers with citations from real-time web search.",
+    exa: "Search the web using Exa AI. Returns titles, URLs, and snippets with semantic search capabilities.",
+    brave:
+      "Search the web using Brave Search API. Supports region-specific and localized search via country and language parameters. Returns titles, URLs, and snippets for fast research.",
+  };
+  const description = descriptions[provider];
 
   return {
     label: "Web Search",
@@ -484,7 +537,11 @@ export function createWebSearchTool(options?: {
       const perplexityAuth =
         provider === "perplexity" ? resolvePerplexityApiKey(perplexityConfig) : undefined;
       const apiKey =
-        provider === "perplexity" ? perplexityAuth?.apiKey : resolveSearchApiKey(search);
+        provider === "exa"
+          ? resolveExaApiKey(search)
+          : provider === "perplexity"
+            ? perplexityAuth?.apiKey
+            : resolveSearchApiKey(search);
 
       if (!apiKey) {
         return jsonResult(missingSearchKeyPayload(provider));
