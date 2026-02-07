@@ -171,8 +171,12 @@ class Embeddings {
 
 const MEMORY_TRIGGERS = [
   /zapamatuj si|pamatuj|remember/i,
+  /기억(해|해줘|해\s*둬|해둬|해\s*주세요|해주세요)|메모(해|해줘|해\s*둬|해둬)|잊지\s?마/i,
   /preferuji|radši|nechci|prefer/i,
+  /선호|좋아해|싫어해|원해|필요해/i,
   /rozhodli jsme|budeme používat/i,
+  /(온도|temperature|타임존|timezone|KST|한국\s*시간|메모리\s*DB|memory).*(유지|고정|설정|사용)/i,
+  /(유지|고정|설정|사용).*(온도|temperature|타임존|timezone|KST|한국\s*시간|메모리\s*DB|memory)/i,
   /\+\d{10,}/,
   /[\w.-]+@[\w.-]+\.\w+/,
   /můj\s+\w+\s+je|je\s+můj/i,
@@ -207,16 +211,16 @@ function shouldCapture(text: string): boolean {
 
 function detectCategory(text: string): MemoryCategory {
   const lower = text.toLowerCase();
-  if (/prefer|radši|like|love|hate|want/i.test(lower)) {
+  if (/prefer|radši|like|love|hate|want|선호|좋아|싫어|원해|필요/i.test(lower)) {
     return "preference";
   }
-  if (/rozhodli|decided|will use|budeme/i.test(lower)) {
+  if (/rozhodli|decided|will use|budeme|결정|정했|하기로|유지|고정/i.test(lower)) {
     return "decision";
   }
-  if (/\+\d{10,}|@[\w.-]+\.\w+|is called|jmenuje se/i.test(lower)) {
+  if (/\+\d{10,}|@[\w.-]+\.\w+|is called|jmenuje se|이메일|전화번호|이름|닉네임/i.test(lower)) {
     return "entity";
   }
-  if (/is|are|has|have|je|má|jsou/i.test(lower)) {
+  if (/is|are|has|have|je|má|jsou|이다|입니다|있다|없다|사용/i.test(lower)) {
     return "fact";
   }
   return "other";
@@ -520,9 +524,9 @@ const memoryPlugin = {
             }
             const msgObj = msg as Record<string, unknown>;
 
-            // Only process user and assistant messages
+            // 사용자 메시지만 메모리로 캡처해 잘못된 응답 누적을 줄인다.
             const role = msgObj.role;
-            if (role !== "user" && role !== "assistant") {
+            if (role !== "user") {
               continue;
             }
 
