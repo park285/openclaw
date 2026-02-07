@@ -14,6 +14,7 @@ services:
     volumes:
       - ${OPENCLAW_CONFIG_DIR}:/home/node/.openclaw
       - ${OPENCLAW_WORKSPACE_DIR}:/home/node/.openclaw/workspace
+      - ${OPENCLAW_EXTENSIONS_DIR:-/home/kapu/gemini/llm/extensions}:/home/node/.openclaw/extensions
     ports:
       - "${OPENCLAW_GATEWAY_PORT:-18789}:18789"
       - "${OPENCLAW_BRIDGE_PORT:-18790}:18790"
@@ -43,6 +44,7 @@ services:
     volumes:
       - ${OPENCLAW_CONFIG_DIR}:/home/node/.openclaw
       - ${OPENCLAW_WORKSPACE_DIR}:/home/node/.openclaw/workspace
+      - ${OPENCLAW_EXTENSIONS_DIR:-/home/kapu/gemini/llm/extensions}:/home/node/.openclaw/extensions
     stdin_open: true
     tty: true
     init: true
