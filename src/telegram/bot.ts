@@ -131,10 +131,15 @@ export function createTelegramBot(opts: TelegramBotOptions) {
     typeof telegramCfg?.timeoutSeconds === "number" && Number.isFinite(telegramCfg.timeoutSeconds)
       ? Math.max(1, Math.floor(telegramCfg.timeoutSeconds))
       : undefined;
+  // node-fetch의 fetch 타입과 native fetch 타입이 불일치 — grammY는 native fetch 시그니처 기대
+  const narrowedFetch =
+    shouldProvideFetch && fetchImpl
+      ? (fetchImpl as unknown as ApiClientOptions["fetch"])
+      : undefined;
   const client: ApiClientOptions | undefined =
-    shouldProvideFetch || timeoutSeconds
+    narrowedFetch || timeoutSeconds
       ? {
-          ...(shouldProvideFetch && fetchImpl ? { fetch: fetchImpl } : {}),
+          ...(narrowedFetch ? { fetch: narrowedFetch } : {}),
           ...(timeoutSeconds ? { timeoutSeconds } : {}),
         }
       : undefined;
@@ -184,7 +189,7 @@ export function createTelegramBot(opts: TelegramBotOptions) {
   const MAX_RAW_UPDATE_ARRAY = 20;
   const stringifyUpdate = (update: unknown) => {
     const seen = new WeakSet();
-    return JSON.stringify(update ?? null, (key, value) => {
+    return JSON.stringify(update ?? null, (_key, value) => {
       if (typeof value === "string" && value.length > MAX_RAW_UPDATE_STRING) {
         return `${value.slice(0, MAX_RAW_UPDATE_STRING)}...`;
       }
