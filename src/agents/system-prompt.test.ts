@@ -98,8 +98,8 @@ describe("buildAgentSystemPrompt", () => {
       workspaceDir: "/tmp/openclaw",
     });
 
-    expect(prompt).toContain("## OpenClaw CLI Quick Reference");
-    expect(prompt).toContain("openclaw gateway restart");
+    expect(prompt).toContain("## OpenClaw CLI");
+    expect(prompt).toContain("openclaw gateway {status|start|stop|restart}");
     expect(prompt).toContain("Do not invent commands");
   });
 
@@ -131,7 +131,7 @@ describe("buildAgentSystemPrompt", () => {
     );
     expect(prompt).toContain("OpenClaw docs: /tmp/openclaw/docs");
     expect(prompt).toContain(
-      "For OpenClaw behavior, commands, config, or architecture: consult local docs first.",
+      "Consult local docs first for behavior/config/architecture questions.",
     );
   });
 
@@ -144,7 +144,7 @@ describe("buildAgentSystemPrompt", () => {
     expect(prompt).toContain("## Documentation");
     expect(prompt).toContain("OpenClaw docs: /tmp/openclaw/docs");
     expect(prompt).toContain(
-      "For OpenClaw behavior, commands, config, or architecture: consult local docs first.",
+      "Consult local docs first for behavior/config/architecture questions.",
     );
   });
 
@@ -247,8 +247,8 @@ describe("buildAgentSystemPrompt", () => {
       toolNames: ["gateway", "exec"],
     });
 
-    expect(prompt).toContain("## OpenClaw Self-Update");
-    expect(prompt).toContain("config.apply");
+    expect(prompt).toContain("## Self-Update");
+    expect(prompt).toContain("config.{get,schema,apply}");
     expect(prompt).toContain("update.run");
   });
 
