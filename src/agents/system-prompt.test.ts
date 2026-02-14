@@ -115,6 +115,17 @@ describe("buildAgentSystemPrompt", () => {
     expect(prompt).toContain("sessions_send");
   });
 
+  it("adds web search routing guidance when both search tools are available", () => {
+    const prompt = buildAgentSystemPrompt({
+      workspaceDir: "/tmp/openclaw",
+      toolNames: ["web_search", "web_search_realtime"],
+    });
+
+    expect(prompt).toContain("Web search routing:");
+    expect(prompt).toContain("`web_search_realtime`");
+    expect(prompt).toContain("`web_search`");
+  });
+
   it("preserves tool casing in the prompt", () => {
     const prompt = buildAgentSystemPrompt({
       workspaceDir: "/tmp/openclaw",
@@ -299,6 +310,23 @@ describe("buildAgentSystemPrompt", () => {
     expect(prompt).toContain("Alpha");
     expect(prompt).toContain("## IDENTITY.md");
     expect(prompt).toContain("Bravo");
+  });
+
+  it("ignores context files with missing or blank paths", () => {
+    const prompt = buildAgentSystemPrompt({
+      workspaceDir: "/tmp/openclaw",
+      contextFiles: [
+        { path: undefined as unknown as string, content: "Missing path" },
+        { path: "   ", content: "Blank path" },
+        { path: "AGENTS.md", content: "Alpha" },
+      ],
+    });
+
+    expect(prompt).toContain("# Project Context");
+    expect(prompt).toContain("## AGENTS.md");
+    expect(prompt).toContain("Alpha");
+    expect(prompt).not.toContain("Missing path");
+    expect(prompt).not.toContain("Blank path");
   });
 
   it("adds SOUL guidance when a soul file is present", () => {

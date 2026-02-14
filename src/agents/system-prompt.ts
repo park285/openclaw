@@ -72,11 +72,16 @@ function buildUserIdentitySection(ownerLine: string | undefined, isMinimal: bool
   return ["## User Identity", ownerLine, ""];
 }
 
-function buildTimeSection(params: { userTimezone?: string }) {
+function buildTimeSection(params: { userTimezone?: string; userTime?: string }) {
   if (!params.userTimezone) {
     return [];
   }
-  return ["## Current Date & Time", `Time zone: ${params.userTimezone}`, ""];
+  const lines = ["## Current Date & Time"];
+  if (params.userTime) {
+    lines.push(params.userTime);
+  }
+  lines.push(`Time zone: ${params.userTimezone}`, "");
+  return lines;
 }
 
 function buildReplyTagsSection(isMinimal: boolean, supportsReply: boolean) {
@@ -156,6 +161,27 @@ function buildDocsSection(params: { docsPath?: string; isMinimal: boolean; readT
   ];
 }
 
+function buildWebSearchRoutingSection(params: {
+  availableTools: Set<string>;
+  resolveToolName: (normalized: string) => string;
+}) {
+  const hasWebSearch = params.availableTools.has("web_search");
+  const hasRealtimeSearch = params.availableTools.has("web_search_realtime");
+  if (!hasWebSearch && !hasRealtimeSearch) {
+    return [];
+  }
+  if (!hasWebSearch || !hasRealtimeSearch) {
+    return [];
+  }
+  const webSearchName = params.resolveToolName("web_search");
+  const realtimeName = params.resolveToolName("web_search_realtime");
+  return [
+    "Web search routing:",
+    `- Use \`${realtimeName}\` for fresh/live info (breaking news, weather, live scores, stock/crypto prices, today's events).`,
+    `- Use \`${webSearchName}\` for deep research, conceptual questions, or non-time-sensitive topics.`,
+  ];
+}
+
 export function buildAgentSystemPrompt(params: {
   workspaceDir: string;
   defaultThinkLevel?: ThinkLevel;
@@ -220,7 +246,8 @@ export function buildAgentSystemPrompt(params: {
     ls: "List directory contents",
     exec: "Run shell commands (pty available for TTY-required CLIs)",
     process: "Manage background exec sessions",
-    web_search: "Search the web (Brave API)",
+    web_search: "Search the web for general/deep research (Exa).",
+    web_search_realtime: "Search the web for real-time/fresh information (Serper).",
     web_fetch: "Fetch and extract readable content from a URL",
     // Channel docking: add login tools here when a channel needs interactive linking.
     browser: "Control web browser",
@@ -249,6 +276,7 @@ export function buildAgentSystemPrompt(params: {
     "exec",
     "process",
     "web_search",
+    "web_search_realtime",
     "web_fetch",
     "browser",
     "canvas",
@@ -303,6 +331,10 @@ export function buildAgentSystemPrompt(params: {
   }
 
   const hasGateway = availableTools.has("gateway");
+  const webSearchRoutingLines = buildWebSearchRoutingSection({
+    availableTools,
+    resolveToolName,
+  });
   const readToolName = resolveToolName("read");
   const execToolName = resolveToolName("exec");
   const processToolName = resolveToolName("process");
@@ -326,6 +358,7 @@ export function buildAgentSystemPrompt(params: {
     : undefined;
   const reasoningLevel = params.reasoningLevel ?? "off";
   const userTimezone = params.userTimezone?.trim();
+  const userTime = params.userTime;
   const skillsPrompt = params.skillsPrompt?.trim();
   const heartbeatPrompt = params.heartbeatPrompt?.trim();
   const heartbeatPromptLine = heartbeatPrompt
@@ -365,6 +398,9 @@ export function buildAgentSystemPrompt(params: {
   });
   const workspaceNotes = (params.workspaceNotes ?? []).map((note) => note.trim()).filter(Boolean);
   const contextFiles = params.contextFiles ?? [];
+  const validContextFiles = contextFiles.filter(
+    (file) => typeof file.path === "string" && file.path.trim().length > 0,
+  );
 
   // For "none" mode, return just the basic identity line
   if (promptMode === "none") {
@@ -396,6 +432,7 @@ export function buildAgentSystemPrompt(params: {
           "- sessions_send: send to another session",
           '- session_status: show usage/time/model state and answer "what model are we using?"',
         ].join("\n"),
+    ...webSearchRoutingLines,
     "TOOLS.md does not control tool availability; it is user guidance for how to use external tools.",
     "If a task is more complex or takes longer, spawn a sub-agent. It will do the work for you and ping you when it's done. You can always check up on it.",
     "",
@@ -479,6 +516,7 @@ export function buildAgentSystemPrompt(params: {
     ...buildUserIdentitySection(ownerLine, isMinimal),
     ...buildTimeSection({
       userTimezone,
+      userTime,
     }),
     ...(contextFiles.length > 0
       ? [
@@ -532,8 +570,8 @@ export function buildAgentSystemPrompt(params: {
     lines.push("## Reasoning Format", reasoningHint, "");
   }
 
-  if (contextFiles.length > 0) {
-    const hasSoulFile = contextFiles.some((file) => {
+  if (validContextFiles.length > 0) {
+    const hasSoulFile = validContextFiles.some((file) => {
       const normalizedPath = file.path.trim().replace(/\\/g, "/");
       const baseName = normalizedPath.split("/").pop() ?? normalizedPath;
       return baseName.toLowerCase() === "soul.md";
@@ -545,7 +583,7 @@ export function buildAgentSystemPrompt(params: {
       );
     }
     lines.push("");
-    for (const file of contextFiles) {
+    for (const file of validContextFiles) {
       lines.push(`## ${file.path}`, "", file.content, "");
     }
   }

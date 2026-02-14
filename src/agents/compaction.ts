@@ -2,6 +2,7 @@ import type { AgentMessage } from "@mariozechner/pi-agent-core";
 import type { ExtensionContext } from "@mariozechner/pi-coding-agent";
 import { estimateTokens, generateSummary } from "@mariozechner/pi-coding-agent";
 import { DEFAULT_CONTEXT_TOKENS } from "./defaults.js";
+import { repairToolUseResultPairing } from "./session-transcript-repair.js";
 
 export const BASE_CHUNK_RATIO = 0.4;
 export const MIN_CHUNK_RATIO = 0.15;
@@ -12,8 +13,29 @@ const MERGE_SUMMARIES_INSTRUCTIONS =
   "Merge these partial summaries into a single cohesive summary. Preserve decisions," +
   " TODOs, open questions, and any constraints.";
 
+function stripToolResultDetails(messages: AgentMessage[]): AgentMessage[] {
+  let touched = false;
+  const out: AgentMessage[] = [];
+  for (const msg of messages) {
+    if (!msg || typeof msg !== "object" || (msg as { role?: unknown }).role !== "toolResult") {
+      out.push(msg);
+      continue;
+    }
+    if (!("details" in msg)) {
+      out.push(msg);
+      continue;
+    }
+    const { details: _details, ...rest } = msg as unknown as Record<string, unknown>;
+    touched = true;
+    out.push(rest as unknown as AgentMessage);
+  }
+  return touched ? out : messages;
+}
+
 export function estimateMessagesTokens(messages: AgentMessage[]): number {
-  return messages.reduce((sum, message) => sum + estimateTokens(message), 0);
+  // SECURITY: toolResult.details can contain untrusted payloads; keep it out of LLM-facing compaction.
+  const safe = stripToolResultDetails(messages);
+  return safe.reduce((sum, message) => sum + estimateTokens(message), 0);
 }
 
 function normalizeParts(parts: number, messageCount: number): number {
@@ -150,7 +172,9 @@ async function summarizeChunks(params: {
     return params.previousSummary ?? DEFAULT_SUMMARY_FALLBACK;
   }
 
-  const chunks = chunkMessagesByMaxTokens(params.messages, params.maxChunkTokens);
+  // SECURITY: never include toolResult.details in summarization prompts.
+  const safeMessages = stripToolResultDetails(params.messages);
+  const chunks = chunkMessagesByMaxTokens(safeMessages, params.maxChunkTokens);
   let summary = params.previousSummary;
 
   for (const chunk of chunks) {
@@ -334,10 +358,22 @@ export function pruneHistoryForContextShare(params: {
     }
     const [dropped, ...rest] = chunks;
     droppedChunks += 1;
-    droppedMessages += dropped.length;
-    droppedTokens += estimateMessagesTokens(dropped);
-    allDroppedMessages.push(...dropped);
-    keptMessages = rest.flat();
+
+    const flatRest = rest.flat();
+
+    // 청크 제거 후 tool_use/tool_result 쌍 복구:
+    // 제거된 청크에 tool_use가 있고 유지 청크에 고아 tool_result가 남는 경우 제거
+    // "unexpected tool_use_id" API 에러 방지
+    const repairReport = repairToolUseResultPairing(flatRest);
+    const repairedKept = repairReport.messages;
+    const orphanedToolResults = repairReport.droppedOrphanToolResultMessages ?? [];
+    const orphanedCount = repairReport.droppedOrphanToolResults ?? repairReport.droppedOrphanCount;
+
+    droppedMessages += dropped.length + orphanedCount;
+    droppedTokens += estimateMessagesTokens(dropped) + estimateMessagesTokens(orphanedToolResults);
+    allDroppedMessages.push(...dropped, ...orphanedToolResults);
+    // 고아 tool_result는 tool_use 컨텍스트가 없으므로 요약에 불필요
+    keptMessages = repairedKept;
   }
 
   return {

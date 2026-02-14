@@ -190,7 +190,7 @@ const FIELD_LABELS: Record<string, string> = {
   "tools.message.broadcast.enabled": "Enable Message Broadcast",
   "tools.web.search.enabled": "Enable Web Search Tool",
   "tools.web.search.provider": "Web Search Provider",
-  "tools.web.search.apiKey": "Brave Search API Key",
+  "tools.web.search.apiKey": "Web Search API Key (legacy)",
   "tools.web.search.maxResults": "Web Search Max Results",
   "tools.web.search.timeoutSeconds": "Web Search Timeout (sec)",
   "tools.web.search.cacheTtlMinutes": "Web Search Cache TTL (min)",
@@ -472,18 +472,12 @@ const FIELD_HELP: Record<string, string> = {
   "tools.message.crossContext.marker.suffix":
     'Text suffix for cross-context markers (supports "{channel}").',
   "tools.message.broadcast.enabled": "Enable broadcast action (default: true).",
-  "tools.web.search.enabled": "Enable the web_search tool (requires a provider API key).",
-  "tools.web.search.provider": 'Search provider ("brave", "perplexity", or "exa").',
-  "tools.web.search.apiKey": "Brave Search API key (fallback: BRAVE_API_KEY env var).",
+  "tools.web.search.enabled": "Enable the web_search tool.",
+  "tools.web.search.provider": 'Search provider ("exa").',
+  "tools.web.search.apiKey": "Legacy web search API key field (kept for backward compatibility).",
   "tools.web.search.maxResults": "Default number of results to return (1-10).",
   "tools.web.search.timeoutSeconds": "Timeout in seconds for web_search requests.",
   "tools.web.search.cacheTtlMinutes": "Cache TTL in minutes for web_search results.",
-  "tools.web.search.perplexity.apiKey":
-    "Perplexity or OpenRouter API key (fallback: PERPLEXITY_API_KEY or OPENROUTER_API_KEY env var).",
-  "tools.web.search.perplexity.baseUrl":
-    "Perplexity base URL override (default: https://openrouter.ai/api/v1 or https://api.perplexity.ai).",
-  "tools.web.search.perplexity.model":
-    'Perplexity model override (default: "perplexity/sonar-pro").',
   "tools.web.search.exa.endpoint": "Exa hosted MCP endpoint (default: https://mcp.exa.ai/mcp).",
   "tools.web.search.exa.apiKey": "Optional API key for self-hosted Exa MCP (hosted MCP is free).",
   "tools.web.fetch.enabled": "Enable the web_fetch tool (lightweight HTTP fetch).",
@@ -1052,6 +1046,11 @@ function stripChannelSchema(schema: ConfigSchema): ConfigSchema {
   const root = asSchemaObject(next);
   if (!root || !root.properties) {
     return next;
+  }
+  // Allow `$schema` in config files for editor tooling, but hide it from Control UI form schema.
+  delete root.properties.$schema;
+  if (Array.isArray(root.required)) {
+    root.required = root.required.filter((key) => key !== "$schema");
   }
   const channelsNode = asSchemaObject(root.properties.channels);
   if (channelsNode) {
