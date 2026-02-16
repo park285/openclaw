@@ -59,6 +59,10 @@ export async function list(state: CronServiceState, opts?: { includeDisabled?: b
   });
 }
 
+export function getJob(state: CronServiceState, id: string) {
+  return state.store?.jobs.find((job) => job.id === id);
+}
+
 export async function add(state: CronServiceState, input: CronJobCreate) {
   return await locked(state, async () => {
     warnIfDisabled(state, "add");

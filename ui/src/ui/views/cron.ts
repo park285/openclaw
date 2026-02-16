@@ -59,6 +59,10 @@ function resolveChannelLabel(props: CronProps, channel: string): string {
 
 export function renderCron(props: CronProps) {
   const channelOptions = buildChannelOptions(props);
+  const supportsAnnounce =
+    props.form.sessionTarget === "isolated" && props.form.payloadKind === "agentTurn";
+  const selectedDeliveryMode =
+    props.form.deliveryMode === "announce" && !supportsAnnounce ? "none" : props.form.deliveryMode;
   return html`
     <section class="grid grid-cols-2">
       <div class="card">
@@ -197,24 +201,31 @@ export function renderCron(props: CronProps) {
             rows="4"
           ></textarea>
         </label>
-        ${
-          props.form.payloadKind === "agentTurn"
-            ? html`
-                <div class="form-grid" style="margin-top: 12px;">
-                  <label class="field">
-                    <span>Delivery</span>
-                    <select
-                      .value=${props.form.deliveryMode}
-                      @change=${(e: Event) =>
-                        props.onFormChange({
-                          deliveryMode: (e.target as HTMLSelectElement)
-                            .value as CronFormState["deliveryMode"],
-                        })}
-                    >
+        <div class="form-grid" style="margin-top: 12px;">
+          <label class="field">
+            <span>Delivery</span>
+            <select
+              .value=${selectedDeliveryMode}
+              @change=${(e: Event) =>
+                props.onFormChange({
+                  deliveryMode: (e.target as HTMLSelectElement)
+                    .value as CronFormState["deliveryMode"],
+                })}
+            >
+              ${
+                supportsAnnounce
+                  ? html`
                       <option value="announce">Announce summary (default)</option>
-                      <option value="none">None (internal)</option>
-                    </select>
-                  </label>
+                    `
+                  : nothing
+              }
+              <option value="webhook">Webhook POST</option>
+              <option value="none">None (internal)</option>
+            </select>
+          </label>
+          ${
+            props.form.payloadKind === "agentTurn"
+              ? html`
                   <label class="field">
                     <span>Timeout (seconds)</span>
                     <input
@@ -225,11 +236,27 @@ export function renderCron(props: CronProps) {
                         })}
                     />
                   </label>
-                  ${
-                    props.form.deliveryMode === "announce"
-                      ? html`
-                          <label class="field">
-                            <span>Channel</span>
+                `
+              : nothing
+          }
+          ${
+            selectedDeliveryMode !== "none"
+              ? html`
+                  <label class="field">
+                    <span>${selectedDeliveryMode === "webhook" ? "Webhook URL" : "Channel"}</span>
+                    ${
+                      selectedDeliveryMode === "webhook"
+                        ? html`
+                            <input
+                              .value=${props.form.deliveryTo}
+                              @input=${(e: Event) =>
+                                props.onFormChange({
+                                  deliveryTo: (e.target as HTMLInputElement).value,
+                                })}
+                              placeholder="https://example.invalid/cron"
+                            />
+                          `
+                        : html`
                             <select
                               .value=${props.form.deliveryChannel || "last"}
                               @change=${(e: Event) =>
@@ -244,7 +271,12 @@ export function renderCron(props: CronProps) {
                                   </option>`,
                               )}
                             </select>
-                          </label>
+                          `
+                    }
+                  </label>
+                  ${
+                    selectedDeliveryMode === "announce"
+                      ? html`
                           <label class="field">
                             <span>To</span>
                             <input
@@ -259,10 +291,10 @@ export function renderCron(props: CronProps) {
                         `
                       : nothing
                   }
-                </div>
-              `
-            : nothing
-        }
+                `
+              : nothing
+          }
+        </div>
         <div class="row" style="margin-top: 14px;">
           <button class="btn primary" ?disabled=${props.busy} @click=${props.onAdd}>
             ${props.busy ? "Saving…" : "Add job"}

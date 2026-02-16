@@ -198,10 +198,13 @@ const FIELD_LABELS: Record<string, string> = {
   "tools.web.search.exa.apiKey": "Exa MCP API Key",
   "tools.web.fetch.enabled": "Enable Web Fetch Tool",
   "tools.web.fetch.maxChars": "Web Fetch Max Chars",
+  "tools.web.fetch.maxResponseBytes": "Web Fetch Max Response Bytes",
   "tools.web.fetch.timeoutSeconds": "Web Fetch Timeout (sec)",
   "tools.web.fetch.cacheTtlMinutes": "Web Fetch Cache TTL (min)",
   "tools.web.fetch.maxRedirects": "Web Fetch Max Redirects",
   "tools.web.fetch.userAgent": "Web Fetch User-Agent",
+  "cron.webhook": "Cron Legacy Webhook URL",
+  "cron.webhookToken": "Cron Webhook Bearer Token",
   "gateway.controlUi.basePath": "Control UI Base Path",
   "gateway.controlUi.root": "Control UI Assets Root",
   "gateway.controlUi.allowedOrigins": "Control UI Allowed Origins",
@@ -484,6 +487,8 @@ const FIELD_HELP: Record<string, string> = {
   "tools.web.fetch.maxChars": "Max characters returned by web_fetch (truncated).",
   "tools.web.fetch.maxCharsCap":
     "Hard cap for web_fetch maxChars (applies to config and tool calls).",
+  "tools.web.fetch.maxResponseBytes":
+    "Max response bytes read before parsing/extraction (default: 2,000,000).",
   "tools.web.fetch.timeoutSeconds": "Timeout in seconds for web_fetch requests.",
   "tools.web.fetch.cacheTtlMinutes": "Cache TTL in minutes for web_fetch results.",
   "tools.web.fetch.maxRedirects": "Maximum redirects allowed for web_fetch (default: 3).",

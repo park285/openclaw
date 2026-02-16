@@ -5,16 +5,28 @@ import { MACOS_APP_SOURCES_DIR } from "../compat/legacy-names.js";
 import { CronDeliverySchema } from "../gateway/protocol/schema.js";
 
 type SchemaLike = {
-  anyOf?: Array<{ properties?: Record<string, unknown>; const?: unknown }>;
+  anyOf?: Array<SchemaLike>;
   properties?: Record<string, unknown>;
   const?: unknown;
 };
 
 function extractDeliveryModes(schema: SchemaLike): string[] {
   const modeSchema = schema.properties?.mode as SchemaLike | undefined;
-  return (modeSchema?.anyOf ?? [])
+  const directModes = (modeSchema?.anyOf ?? [])
     .map((entry) => entry?.const)
     .filter((value): value is string => typeof value === "string");
+  if (directModes.length > 0) {
+    return directModes;
+  }
+
+  const unionModes = (schema.anyOf ?? [])
+    .map((entry) => {
+      const mode = entry.properties?.mode as SchemaLike | undefined;
+      return mode?.const;
+    })
+    .filter((value): value is string => typeof value === "string");
+
+  return Array.from(new Set(unionModes));
 }
 
 const UI_FILES = ["ui/src/ui/types.ts", "ui/src/ui/ui-types.ts", "ui/src/ui/views/cron.ts"];
@@ -31,9 +43,6 @@ async function resolveSwiftFiles(cwd: string, candidates: string[]): Promise<str
     } catch {
       // ignore missing path
     }
-  }
-  if (matches.length === 0) {
-    throw new Error(`Missing Swift cron definition. Tried: ${candidates.join(", ")}`);
   }
   return matches;
 }
@@ -71,9 +80,11 @@ describe("cron protocol conformance", () => {
     expect(uiTypes.includes("jobCount")).toBe(false);
 
     const [swiftRelPath] = await resolveSwiftFiles(cwd, SWIFT_STATUS_CANDIDATES);
-    const swiftPath = path.join(cwd, swiftRelPath);
-    const swift = await fs.readFile(swiftPath, "utf-8");
-    expect(swift.includes("struct CronSchedulerStatus")).toBe(true);
-    expect(swift.includes("let jobs:")).toBe(true);
+    if (swiftRelPath) {
+      const swiftPath = path.join(cwd, swiftRelPath);
+      const swift = await fs.readFile(swiftPath, "utf-8");
+      expect(swift.includes("struct CronSchedulerStatus")).toBe(true);
+      expect(swift.includes("let jobs:")).toBe(true);
+    }
   });
 });

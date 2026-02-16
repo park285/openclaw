@@ -26,6 +26,10 @@ export class CronService {
     return await ops.list(this.state, opts);
   }
 
+  getJob(id: string) {
+    return ops.getJob(this.state, id);
+  }
+
   async add(input: CronJobCreate) {
     return await ops.add(this.state, input);
   }

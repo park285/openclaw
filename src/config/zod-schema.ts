@@ -87,6 +87,15 @@ const MemorySchema = z
   .strict()
   .optional();
 
+function isHttpWebhookUrl(value: string) {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 export const OpenClawSchema = z
   .object({
     $schema: z.string().optional(),
@@ -289,6 +298,13 @@ export const OpenClawSchema = z
         enabled: z.boolean().optional(),
         store: z.string().optional(),
         maxConcurrentRuns: z.number().int().positive().optional(),
+        webhook: z
+          .string()
+          .refine((value) => isHttpWebhookUrl(value), {
+            message: "cron.webhook must be a valid http(s) URL",
+          })
+          .optional(),
+        webhookToken: z.string().optional(),
       })
       .strict()
       .optional(),
